@@ -3,18 +3,31 @@
 //  The docs for the `std::fmt` module are a good place to start and look for examples:
 //  https://doc.rust-lang.org/std/fmt/index.html#write
 
+use std::error::Error;
+use std::fmt;
+use std::fmt::Display;
+
+#[derive(Debug)]
 enum TicketNewError {
     TitleError(String),
     DescriptionError(String),
 }
 
-// TODO: `easy_ticket` should panic when the title is invalid, using the error message
-//   stored inside the relevant variant of the `TicketNewError` enum.
-//   When the description is invalid, instead, it should use a default description:
-//   "Description not provided".
-fn easy_ticket(title: String, description: String, status: Status) -> Ticket {
-    todo!()
+// Implement the Display trait so that our error messages can be formatted as strings.
+// When someone uses the `{}` formatter on our error, it will show the provided message.
+impl Display for TicketNewError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        // Match on the error type and extract the stored message.
+        match self {
+            TicketNewError::TitleError(msg) => write!(f, "{}", msg),
+            TicketNewError::DescriptionError(msg) => write!(f, "{}", msg),
+        }
+    }
 }
+
+// Implement the Error trait (which is often empty) so that TicketNewError can be used
+// in functions and libraries that expect a type implementing std::error::Error.
+impl Error for TicketNewError {}
 
 #[derive(Debug, PartialEq, Clone)]
 struct Ticket {
@@ -28,6 +41,22 @@ enum Status {
     ToDo,
     InProgress { assigned_to: String },
     Done,
+}
+
+
+// TODO: `easy_ticket` should panic when the title is invalid, using the error message
+//   stored inside the relevant variant of the `TicketNewError` enum.
+//   When the description is invalid, instead, it should use a default description:
+//   "Description not provided".
+fn easy_ticket(title: String, description: String, status: Status) -> Ticket {
+    let ticket = Ticket::new(title.clone(), description, status.clone());
+    match ticket {
+        Ok(t) => t,
+        Err(TicketNewError::TitleError(e)) => panic!("{}", e),
+        Err(TicketNewError::DescriptionError(_)) => {
+            Ticket::new(title, "Description not provided".to_string(), status).unwrap()
+        }
+    }
 }
 
 impl Ticket {

@@ -3,12 +3,28 @@
 //   a `String` field into each variant.
 //   You'll also have to add `thiserror` as a dependency in the `Cargo.toml` file.
 
+#[derive(thiserror::Error, Debug)]
 enum TicketNewError {
+    #[error("Title cannot be empty")]
     TitleCannotBeEmpty,
+    #[error("Title cannot be longer than 50 bytes")]
     TitleTooLong,
+    #[error("Description cannot be empty")]
     DescriptionCannotBeEmpty,
+    #[error("Description cannot be longer than 500 bytes")]
     DescriptionTooLong,
 }
+
+// Dynamic error implementation: errors store a String.
+// The "{0}" in the attribute tells thiserror to use the contained String as the error message.
+// #[derive(thiserror::Error, Debug)]
+// enum TicketNewError {
+//     #[error("{0}")]
+//     TitleError(String),
+//     #[error("{0}")]
+//     DescriptionError(String),
+// }
+
 
 #[derive(Debug, PartialEq, Clone)]
 struct Ticket {
@@ -42,6 +58,24 @@ impl Ticket {
         if description.len() > 500 {
             return Err(TicketNewError::DescriptionTooLong);
         }
+
+        // Use dynamic errors by constructing the error with a runtime string.
+        // if title.is_empty() {
+        //     return Err(TicketNewError::TitleError("Title cannot be empty".to_string()));
+        // }
+        // if title.len() > 50 {
+        //     return Err(TicketNewError::TitleError(
+        //         "Title cannot be longer than 50 bytes".to_string(),
+        //     ));
+        // }
+        // if description.is_empty() {
+        //     return Err(TicketNewError::DescriptionError("Description cannot be empty".to_string()));
+        // }
+        // if description.len() > 500 {
+        //     return Err(TicketNewError::DescriptionError(
+        //         "Description cannot be longer than 500 bytes".to_string(),
+        //     ));
+        // }
 
         Ok(Ticket {
             title,
