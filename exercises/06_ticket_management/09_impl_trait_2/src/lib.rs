@@ -33,8 +33,14 @@ impl TicketStore {
     // that can be infallibly converted into a `Ticket`.
     // This can make it nicer to use the method, as it removes the syntax noise of `.into()`
     // from the calling site. It can worsen the quality of the compiler error messages, though.
-    pub fn add_ticket(&mut self, ticket: impl Into<Ticket>) {
-        self.tickets.push(ticket.into());
+    pub fn add_ticket<T>(&mut self, ticket: T)
+    where
+        // basically, T can be anything convertible into a Ticket after ".into()"
+        // If "From<A> for B", rust automatically implements "Into<B> for A"
+        // Ticket: From<T> // is the "canonical" trait than "T: Into<Ticket>" (which is derived trait)
+        T: Into<Ticket> // equivalent of "Ticket: From<T>"
+    {
+        self.tickets.push(ticket.into()); // Converts T -> Ticket
     }
 }
 

@@ -44,8 +44,27 @@ impl TicketStore {
         }
     }
 
-    pub fn add_ticket(&mut self, ticket: Ticket) {
+    pub fn add_ticket(&mut self, ticket_draft: TicketDraft) -> TicketId {
+        // let id: u64 = self.tickets.len().try_into().unwrap();
+        let id = TicketId(self.tickets.len() as u64);
+        let ticket = Ticket {
+            id: id,
+            title: ticket_draft.title,
+            description: ticket_draft.description,
+            status: Status::ToDo,
+        };
         self.tickets.push(ticket);
+
+        id
+    }
+
+    pub fn get(&self, ticket_id: TicketId) -> Option<&Ticket> {
+        // Extract the u64 value from TicketId using pattern matching
+        let TicketId(id) = ticket_id;
+        // Convert u64 into usize which is needed in Vec::get
+        let index: usize = id.try_into().ok()?;
+        // return
+        self.tickets.get(index)
     }
 }
 

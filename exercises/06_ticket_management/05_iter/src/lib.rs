@@ -30,6 +30,35 @@ impl TicketStore {
     pub fn add_ticket(&mut self, ticket: Ticket) {
         self.tickets.push(ticket);
     }
+
+    pub fn iter(&self) -> TicketStoreIter {
+        TicketStoreIter {
+            tickets: &self.tickets,
+            index: 0,
+        }
+    }
+}
+
+pub struct TicketStoreIter<'a> {
+    // reference to the tickets vector
+    tickets: &'a [Ticket],
+    // the current position in the vector
+    index: usize,
+}
+
+impl <'a> Iterator for TicketStoreIter<'a> {
+    type Item = &'a Ticket;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.index >= self.tickets.len() {
+            return None;
+        }
+
+        let ticket = &self.tickets[self.index];
+        self.index += 1;
+
+        Some(ticket)
+    }
 }
 
 #[cfg(test)]

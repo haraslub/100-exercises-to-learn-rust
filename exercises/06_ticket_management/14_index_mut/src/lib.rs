@@ -1,6 +1,6 @@
 // TODO: Implement `IndexMut<&TicketId>` and `IndexMut<TicketId>` for `TicketStore`.
 
-use std::ops::Index;
+use std::ops::{Index, IndexMut};
 use ticket_fields::{TicketDescription, TicketTitle};
 
 #[derive(Clone)]
@@ -57,12 +57,19 @@ impl TicketStore {
     pub fn get(&self, id: TicketId) -> Option<&Ticket> {
         self.tickets.iter().find(|&t| t.id == id)
     }
+
+    pub fn get_mut(&mut self, id: TicketId) -> Option<&mut Ticket> {
+        // we do not use |&mut t| as iter_mut() already returns it 
+        self.tickets.iter_mut().find(|t| t.id == id)
+    }
 }
 
 impl Index<TicketId> for TicketStore {
     type Output = Ticket;
 
     fn index(&self, index: TicketId) -> &Self::Output {
+        // get returns Option<&Ticket> (see above), unwrap() converts it to &Ticket
+        // This matches Index trait's requirement of returning &Self::Output
         self.get(index).unwrap()
     }
 }
@@ -71,7 +78,27 @@ impl Index<&TicketId> for TicketStore {
     type Output = Ticket;
 
     fn index(&self, index: &TicketId) -> &Self::Output {
+        // *index dereferences &TicketId to get TicketId
+        // Then we use the Index<TicketId> implementation we already defined above
+        // This avoids code duplication by reusing the same indexing logic
         &self[*index]
+    }
+}
+
+impl IndexMut<TicketId> for TicketStore {
+    fn index_mut(&mut self, index: TicketId) -> &mut Self::Output {
+        // Similar to Index<TicketId>, we can use get_mut and unwrap
+        // get_mut returns Option<&mut Ticket>, unwrap() converts it to &mut Ticket
+        self.get_mut(index).unwrap()
+    }
+}
+
+impl IndexMut<&TicketId> for TicketStore {
+    fn index_mut(&mut self, index: &TicketId) -> &mut Self::Output {
+        // *index dereferences &TicketId to get TicketId
+        // Then we use the IndexMut<TicketId> implementation we already defined above
+        // This avoids code duplication by reusing the same indexing logic
+        &mut self[*index]
     }
 }
 

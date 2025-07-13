@@ -12,8 +12,8 @@ pub struct TicketStore {
     tickets: BTreeMap<TicketId, Ticket>,
     counter: u64,
 }
-
-#[derive(Clone, Copy, Debug, PartialEq)]
+// need to derive PartialEq, Eq, PartialOrd, Ord
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct TicketId(u64);
 
 #[derive(Clone, Debug, PartialEq)]
@@ -40,7 +40,7 @@ pub enum Status {
 impl TicketStore {
     pub fn new() -> Self {
         Self {
-            tickets: todo!(),
+            tickets: BTreeMap::new(),
             counter: 0,
         }
     }
@@ -54,16 +54,40 @@ impl TicketStore {
             description: ticket.description,
             status: Status::ToDo,
         };
-        todo!();
+        self.tickets.insert(id, ticket);
         id
     }
 
     pub fn get(&self, id: TicketId) -> Option<&Ticket> {
-        todo!()
+        self.tickets.get(&id)
     }
 
     pub fn get_mut(&mut self, id: TicketId) -> Option<&mut Ticket> {
-        todo!()
+        self.tickets.get_mut(&id)
+    }
+}
+
+// The lifetime parameter 'a is needed because we are dealing with borrowed 
+// references, not owned data.
+// - `&'a TicketStore` means "a reference to a TicketStore that lives for lifetime 'a'"
+// - `&'a Ticket` means "references to Tickets that live for the same lifetime 'a'"
+// - The lifetime 'a ensures that the TicketStore lives at least as long as the references to its tickets
+impl <'a> IntoIterator for &'a TicketStore {
+    // Item = The type of each individual thing the iterator yields
+    type Item = &'a Ticket;
+    // IntoIter = the "machine" (= iterator) that produces items
+    type IntoIter = std::collections::btree_map::Values<'a, TicketId, Ticket>;
+
+    // let store = TicketStore::new();
+    // let iterator = (&store).into_iter();  // Returns IntoIter type
+    //     ^^^^^^^^                          // This is the "machine"
+    // for ticket in iterator {              // Each ticket is an Item
+    //     ^^^^^^                            // This is &Ticket
+    //    println!("{:?}", ticket.id);
+    // }
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.tickets.values()
     }
 }
 
