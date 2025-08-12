@@ -7,7 +7,7 @@ use ticket_fields::test_helpers::{ticket_description, ticket_title};
 
 #[test]
 fn a_thread_is_spawned() {
-    let sender = launch();
+    let (sender, handle) = launch();
     std::thread::sleep(Duration::from_millis(200));
 
     sender
@@ -18,6 +18,16 @@ fn a_thread_is_spawned() {
         // If the thread is no longer running, this will panic
         // because the channel will be closed.
         .expect("Did you actually spawn a thread? The channel is closed!");
+
+    sender.send(Command::Shutdown).unwrap();
+    handle.join().expect("Server thread panicked");
+
+    let result = sender.send(Command::Insert(TicketDraft {
+        title: ticket_title(),
+        description: ticket_description(),
+    }));
+
+    assert!(result.is_err(), "Server should have shut down and closed the channel");
 }
 
 #[test]
@@ -26,7 +36,7 @@ fn ready() {
     // since our server doesn't expose any **read** actions.
     // We have no way to know if the inserts are actually happening and if they
     // are happening correctly.
-    let move_forward = false;
+    let move_forward = true;
 
     assert!(move_forward);
 }
