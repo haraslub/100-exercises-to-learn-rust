@@ -1,10 +1,34 @@
-use tokio::net::TcpListener;
+use tokio::net::{TcpListener, TcpStream};
+use tokio::task::JoinHandle;
 
 // TODO: write an echo server that accepts TCP connections on two listeners, concurrently.
 //  Multiple connections (on the same listeners) should be processed concurrently.
 //  The received data should be echoed back to the client.
 pub async fn echoes(first: TcpListener, second: TcpListener) -> Result<(), anyhow::Error> {
-    todo!()
+    loop {
+        tokio::select! {
+            result = first.accept() => {
+                let (socket, _) = result?; // ← ? operator propagates error
+                spawn(socket);
+            }
+            result = second.accept() => {
+                let (socket, _) = result?; // ← ? operator propagates error
+                spawn(socket);
+            }
+        }
+    }
+}
+
+// NOTE: The '.await' is inside the async block that gets spawned, not in the spawn function itself.
+// The spawn function just creates and schedules the task, then returns the handle.
+fn spawn(mut socket: TcpStream) -> JoinHandle<()> {
+    // tokio::spawn is synchronous, it schedules the async block to run 
+    // and returns a JoinHandle immediately. It doesn't wait for the task to complete.
+    let handle = tokio::spawn(async move {
+        let (mut reader, mut writer) = socket.split();
+        let _ = tokio::io::copy(&mut reader, &mut writer).await;
+    });
+    handle
 }
 
 #[cfg(test)]

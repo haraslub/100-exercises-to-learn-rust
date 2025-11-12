@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 // TODO: Implement the `fixed_reply` function. It should accept two `TcpListener` instances,
 //  accept connections on both of them concurrently, and always reply to clients by sending
 //  the `Display` representation of the `reply` argument as a response.
@@ -10,7 +12,39 @@ where
     // `T` cannot be cloned. How do you share it between the two server tasks?
     T: Display + Send + Sync + 'static,
 {
-    todo!()
+    let reply_arc = Arc::new(reply);
+
+    loop {
+        tokio::select! {
+            result = handle_connection(&first, reply_arc.clone()) => {
+                if let Err(e) = result {
+                    eprintln!("Error handling connection on first listener: {}", e);
+                }
+            },
+            result = handle_connection(&second, reply_arc.clone()) => {
+                if let Err(e) = result {
+                    eprintln!("Error handling connection on second listener: {}", e);
+                }
+            },
+        }
+    }
+}
+
+async fn handle_connection<T>(listener: &TcpListener, reply: Arc<T>) -> Result<(), anyhow::Error>
+where
+    T: Display + Send + Sync + 'static,
+{
+    let (mut socket, _) = listener.accept().await?;
+    tokio::spawn(async move {
+        let (_, mut writer) = socket.split();
+        if let Err(e) = writer
+            .write_all(reply.as_ref().to_string().as_bytes())
+            .await
+        {
+            eprintln!("Error writing to client: {}", e);
+        }
+    });
+    Ok(())
 }
 
 #[cfg(test)]
